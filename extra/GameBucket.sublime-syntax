@@ -1,0 +1,107 @@
+%YAML 1.2
+---
+# See http://www.sublimetext.com/docs/3/syntax.html
+scope: source.gamebucket
+file_extensions:
+  - bucket
+  - bkt
+
+variables:
+  ident: '[a-zA-Z_][a-zA-Z0-9_]*'
+  capident: '[A-Z][a-zA-Z0-9_]*'
+
+
+contexts:
+  prototype:
+    # Strings begin and end with quotes, and use backslashes as an escape
+    # character
+    - match: '"'
+      scope: punctuation.definition.string.begin.gamebucket
+      push: double_quoted_string
+
+    # Comments begin with a '//' and finish at the end of the line
+    - match: '//'
+      scope: punctuation.definition.comment.gamebucket
+      push: line_comment
+
+  js:
+    - match: '{'
+      scope: punctuation.section.braces.begin
+      push: Packages/JavaScript/JavaScript.sublime-syntax
+      with_prototype:
+        - match: (?=})
+          captures:
+            1: punctuation.section.braces.end
+          pop: true
+
+  main:    
+    - include: js
+
+    - match: '(?i)\b(table|view|command|type|as|import)\b'
+      scope: keyword.other.gamebucket
+
+    - match: '(?i)\b(var|const|public|private)\b'
+      scope: storage.modifier
+
+    - match: '\b({{ident}})\s*(\:)'
+      captures:
+        1: entity.name.function.gamebucket
+        2: punctuation.definition.generic.begin
+
+    # query function call
+    - match: '\b({{ident}})\s*(\()'
+      captures:
+        1: variable.function
+        2: punctuation.section.parens.begin
+      push: function_call
+
+    # - match: '\b{{ident}}\b'
+    #   scope: variable.other
+
+    - match: '^\s*(\*)\s*({{ident}})\s*(\()'
+      scope: meta.trait.table-meta
+      push: function_call
+      captures:
+        1: punctuation.definition.keyword
+        2: variable.function
+        3: punctuation.section.parens.begin
+
+    # Numbers
+    - match: '\b(-)?[0-9.]+\b'
+      scope: constant.numeric.gamebucket
+
+    - match: '\b{{capident}}\b'
+      scope: storage.type
+
+  double_quoted_string:
+    - meta_scope: string.quoted.double.gamebucket
+    - match: '\\.'
+      scope: constant.character.escape.gamebucket
+    - match: '"'
+      scope: punctuation.definition.string.end.gamebucket
+      pop: true
+
+  line_comment:
+    - meta_include_prototype: false
+    - meta_scope: comment.line.gamebucket
+    - match: $
+      pop: true
+
+  function_call:
+    - include: js
+    - meta_scope: meta.function-call
+
+    - match: '(?i)\b(as)\s+{{ident}}'
+      captures:
+        1: keyword.other.gamebucket
+      scope: meta.function-call.alias
+
+    - match: '\b{{ident}}\b'
+      scope: variable.parameter
+
+    - match: ','
+      scope: punctuation.separator
+
+    - match: '\)'
+      scope: punctuation.section.parens.end
+      pop: true

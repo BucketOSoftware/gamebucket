@@ -1,0 +1,55 @@
+import "vec2" as vec2
+
+type Shape: enum(L, J, O, I, Z, S, T)
+type Color: enum(red, yellow, orange, green, blue, purple, mauve)
+
+table landedBlocks:
+  pos Int[2],
+  color Color
+  //* unique(pos)
+
+table activeTetrad:
+  pos Int[2],
+  shape Shape,
+  rotation Int
+// TODO: enforce only one active tetrad
+
+//# load from CSV
+//# TODO: const
+table offsets:
+  rotation Int,
+  shape Shape,
+  offset Int[2]
+
+  * source("offsets.csv")
+
+table shapeColors:
+  shape Shape,
+  color Color
+
+view activeBlocksWithoutJoin:
+  from(activeTetrad AS at)
+  product(offsets AS o)
+  product(shapeColors AS sc)
+  // lots of opportunity for optimization here
+  where({ at.shape === o.shape && o.shape === sc.shape })
+  where({ at.rotation === o.rotation })
+  project(pos Int[2] ->{
+     vec2.add(pos, at.pos, o.offset)
+  } AS pos, sc.color)
+
+view activeBlocks:
+  from(activeTetrad AS at)
+  join(offsets AS o)
+  join(shapeColors AS sc)
+  project(pos Int[2] ->{
+    vec2.add(pos, at.pos, o.offset)
+  } AS pos, sc.color)
+
+// view allBlocks: from(landedBlocks) union(activeBlocks)
+
+view overlap:
+  from(activeBlocks)
+  join(landedBlocks ON pos) // Specifying join columns not implemented
+  any()
+
